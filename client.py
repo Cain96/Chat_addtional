@@ -30,9 +30,10 @@ def main():
         print('Unable to connect')
         sys.exit(1)
 
+    request_buf = ""
     # 参加登録
     while not request_buf:
-        request_buf = socket.recv(17).decode()
+        request_buf = sock.recv(17).decode()
 
     if request_buf != "REQUEST ACCEPTED\n":
         sock.close()
@@ -40,9 +41,10 @@ def main():
         sys.exit(1)
 
     # ユーザ名登録
-    sock.send(user)
+    sock.send((user + "\n").encode())
+    registered_buf=""
     while not registered_buf:
-        registered_buf = socket.recv(20).decode()
+        registered_buf = sock.recv(20).decode()
 
     if registered_buf != "USERNAME REGISTERED\n":
         sock.close()
@@ -50,26 +52,31 @@ def main():
         sys.exit(1)
     print("Join as %s" % user)
 
-    while True:
-        read_sockets, write_sockets, error_sockets = select.select([sock, ], [sys.stdin, ], [])
+    try:
+        while True:
+            read_sockets, write_sockets, error_sockets = select.select([sock, sys.stdin], [], [])
 
-        for read_socket in read_sockets:
-            if read_socket == sock:
-                # 他クライアントからの入力
-                receive_buf = socket.recv(1024).decode()
-                sys.stdout.write('%s' % receive_buf)
+            for read_socket in read_sockets:
+                if read_socket == sock:
+                    # 他クライアントからの入力
+                    receive_buf = sock.recv(1024).decode()
+                    sys.stdout.write('%s' % receive_buf)
 
-        for write_socket in write_sockets:
-            if write_socket == sys.stdin:
-                # 標準入力
-                msg = sys.stdin.readline().strip()
-                if not msg:
-                    sock.close()
-                    break
-                try:
-                    sock.send(('%s' % msg).encode())
-                except:
-                    break
+                if read_socket == sys.stdin:
+                    # 標準入力
+                    msg = sys.stdin.readline()
+                    if msg == "q\n" or "quit\n":
+                        sock.close()
+                        print("closed socket")
+                        sys.exit()
+                    try:
+                        sock.send(('%s' % msg).encode())
+                    except :
+                        break
+    except KeyboardInterrupt:
+        sock.close()
+        print("closed socket")
+        sys.exit()
 
 
 if __name__ == '__main__':
