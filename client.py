@@ -65,12 +65,12 @@ def main():
                 if read_socket == sys.stdin:
                     # 標準入力
                     msg = sys.stdin.readline()
-                    if msg == "q\n" or "quit\n":
+                    if msg == "q\n" or msg == "quit\n":
                         sock.close()
                         print("closed socket")
                         sys.exit()
                     try:
-                        sock.send(('%s' % msg).encode())
+                        sock.send(str(msg).encode())
                     except :
                         break
     except KeyboardInterrupt:
